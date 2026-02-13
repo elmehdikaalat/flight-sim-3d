@@ -133,10 +133,9 @@ function init() {
       airplaneManager.updateAirplanes(flights);
     }
 
-    // Initial fetch
     updateLiveFlights();
     
-    setInterval(updateLiveFlights, 10000);
+    setInterval(updateLiveFlights, 30000);
   })();
 
   // Controls
