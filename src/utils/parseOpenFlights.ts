@@ -22,9 +22,13 @@ export async function parseAirports(): Promise<Map<string, Airport>> {
     const parts = line.split(',');
     if (parts.length < 8) return;
     
+    const id = parseInt(parts[0]);
     const iata = parts[4].replace(/"/g, '');
     const country = parts[3].replace(/"/g, '');
     
+    if (id > 10000) return;
+    
+    // Filter Morocco and France
     if (country !== 'Morocco' && country !== 'France') return;
     if (!iata || iata === '\\N') return;
     
@@ -54,6 +58,7 @@ export async function parseRoutes(airports: Map<string, Airport>): Promise<Route
     const source = parts[2];
     const dest = parts[4];
     
+    // Only routes between MA and FR airports
     if (airports.has(source) && airports.has(dest)) {
       const srcCountry = airports.get(source)!.country;
       const dstCountry = airports.get(dest)!.country;
