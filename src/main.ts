@@ -1,13 +1,16 @@
 import * as THREE from 'three';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { TilesRenderer, GlobeControls } from '3d-tiles-renderer';
-import { 
-  CesiumIonAuthPlugin, 
-  GLTFExtensionsPlugin, 
-  TilesFadePlugin, 
-  UpdateOnChangePlugin 
+import {
+  CesiumIonAuthPlugin,
+  GLTFExtensionsPlugin,
+  TilesFadePlugin,
+  UpdateOnChangePlugin
 } from '3d-tiles-renderer/plugins';
 import './style.css';
+import { parseAirports, parseRoutes } from './utils/parseOpenFlights';
+import { createFlightArc } from './utils/flightPath';
+import { createAirportMarker } from './utils/airportMarker';
 
 const ION_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1YWNlZjFhMC04MTM0LTQxYWQtYjFhMC0zZGJlNmYxODJmYWMiLCJpZCI6MzkwMjcxLCJpYXQiOjE3NzA5Nzk2Mzh9.3dK3gBHOPbthNMljAA68u89jq5hNracaXeOUPMVjFHA';
 
@@ -40,10 +43,10 @@ function init() {
 
   // 3D Tiles
   tiles = new TilesRenderer();
-  tiles.registerPlugin(new CesiumIonAuthPlugin({ 
-    apiToken: ION_KEY, 
-    assetId: '2275207', 
-    autoRefreshToken: true 
+  tiles.registerPlugin(new CesiumIonAuthPlugin({
+    apiToken: ION_KEY,
+    assetId: '2275207',
+    autoRefreshToken: true
   }));
   tiles.registerPlugin(new GLTFExtensionsPlugin({ dracoLoader }));
   tiles.registerPlugin(new TilesFadePlugin());
@@ -68,6 +71,24 @@ function init() {
   starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starsVertices, 3));
   const stars = new THREE.Points(starsGeometry, starsMaterial);
   scene.add(stars);
+
+  // Load and display flight paths
+  (async () => {
+    const airports = await parseAirports();
+    const routes = await parseRoutes(airports);
+
+    console.log(`Loaded ${airports.size} airports, ${routes.length} routes`);
+    airports.forEach(airport => {
+      const marker = createAirportMarker(airport.lat, airport.lon);
+      scene.add(marker);
+    });
+    routes.forEach(route => {
+      const src = airports.get(route.source)!;
+      const dst = airports.get(route.dest)!;
+      const arc = createFlightArc(src.lat, src.lon, dst.lat, dst.lon);
+      scene.add(arc);
+    });
+  })();
 
   // Controls
   controls = new GlobeControls(scene, camera, renderer.domElement, tiles);
